@@ -1,5 +1,7 @@
 import { Component, OnInit } from '@angular/core';
-import { FormGroup, FormBuilder, Validators, FormControl } from '@angular/forms';
+import { FormGroup, FormBuilder, Validators, Validator } from '@angular/forms';
+import { ValidatorService } from '../../../shared/validator/validator.service';
+import { EmailValidatorService } from '../../../shared/validator/email-validator.service';
 
 @Component({
   selector: 'app-registro',
@@ -8,34 +10,40 @@ import { FormGroup, FormBuilder, Validators, FormControl } from '@angular/forms'
   ]
 })
 export class RegistroComponent implements OnInit {
-
-  nombreApellidoPatter: string = '([a-zA-Z]+) ([a-zA-Z]+)';
-  emailPattern: string = "^[a-z0-9._%+-]+@[a-z0-9.-]+\\.[a-z]{2,4}$";
-
-  noPuedeSerRaxxus( control : FormControl ){
-    const valor: string = control.value?.trim().toLowerCase();
-    if(valor === 'raxxus'){
-      return {
-        noRaxxus : true
-      }
-    }else{
-      return null;
-    }
-  }
-
   miFormulario: FormGroup = this.fb.group({
-    nombre : [ '', [Validators.required, Validators.pattern(this.nombreApellidoPatter)] ],
-    email : ['', [Validators.required, Validators.pattern(this.emailPattern)]],
-    username : ['', [Validators.required, this.noPuedeSerRaxxus]]
+    nombre : [ '', [Validators.required, Validators.pattern(this.validatorService.nombreApellidoPattern)] ],
+    email : ['', [Validators.required, Validators.pattern(this.validatorService.emailPattern)], [this.emailValidator]],
+    username : ['', [Validators.required, this.validatorService.noPuedeSerRaxxus]],
+    password : ['', [Validators.required, Validators.minLength(6)]],
+    confPass : ['', [Validators.required]]
+  }, {
+    validators: [this.validatorService.camposIguales('password', 'confPass')]
   });
 
-  constructor(private fb: FormBuilder) { }
+  get emailErrorMsg(): string{
+    const errors = this.miFormulario.get('email')?.errors;
+    if(errors?.required){
+      return 'El email es obligatorio';
+    }else if(errors?.emailTomado){
+      return 'El email ya fue tomado'
+    }else if(errors?.pattern){
+      return 'No tiene un formato de correo';
+    }
+
+    return 'Hola mundo';
+  }
+
+  constructor(private fb: FormBuilder,
+              private validatorService: ValidatorService,
+              private emailValidator: EmailValidatorService) { }
 
   ngOnInit(): void {
     this.miFormulario.reset({
       nombre : 'Uriel Enrique',
-      email : 'ejemplo@dominio.com',
-      username : 'juasjuas'
+      email : 'test1@test.com',
+      username : 'juasjuas',
+      password : '123456',
+      confPass : '123456'
     });
   }
 
